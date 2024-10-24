@@ -128,14 +128,6 @@ async def downloadTorrent(english_torrents, ctx):
             # Add and monitor the torrent
             await add_and_monitor_torrent(magnet, destination_folder, ctx)  # Await the async function
 
-
-try:
-    with open('movies.txt', 'r') as f:
-        destination_folder = f.readline().strip()
-except FileNotFoundError:
-    print("WARNING: MOVIES.TXT NOT FOUND. WILL NOT FUNCTION.")
-    destination_folder = '/path/to/movies/folder'
-
 # Start
 
 intents = discord.Intents.default()
@@ -146,35 +138,26 @@ description = "Request bot for Theater."
 bot = commands.Bot(command_prefix='*', description=description, intents=intents)
 
 try:
-    with open('channel.txt', 'r') as f:
-        ALLOWED_CHANNEL_ID = int(f.read().strip())
+    with open('config.txt', 'r') as conf:
+        TOKEN = conf.readline().strip()
+        REQUEST_LIMIT = int(f.readline().strip())
+        RESET_PERIOD = timedelta(hours=int(f.readline().strip()))
+        quality = f.readline().strip()
+        min_seeders = f.readline().strip()
+        ALLOWED_CHANNEL_ID = int(f.readline().strip())
+        destination_folder = f.readline().strip()
+        qb_username = f.readline().strip()
+        qb_password = f.readline().strip()
 except FileNotFoundError:
-    print("WARNING: CHANNEL.TXT NOT FOUND. WILL NOT FUNCTION.")
-    ALLOWED_CHANNEL_ID = 0
-
+    print("CONFIG.TXT NOT FOUND... CANNOT CONTINUE.")
+    sleep(5)
+    exit()
+    
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
 
-try:
-    with open('filter.txt', 'r') as f:
-        quality = f.readline().strip()
-        min_seeders = f.readline().strip()
-except FileNotFoundError:
-    print("WARNING: FILTER.TXT NOT FOUND. DEFAULTING TO 25 SEEDERS AT 720p.")
-    quality = '720p'
-    min_seeders = '25'
-
-# Load limits from file
-try:
-    with open('limits.txt', 'r') as f:
-        REQUEST_LIMIT = int(f.readline().strip())
-        RESET_PERIOD = timedelta(hours=int(f.readline().strip()))
-except FileNotFoundError:
-    print("WARNING: LIMITS.TXT NOT FOUND. DEFAULTING TO 2 REQUESTS PER 12 HOURS.")
-    REQUEST_LIMIT = 2
-    RESET_PERIOD = timedelta(hours=12)
 
 # Initialize request tracking variables
 total_requests = 0
@@ -213,16 +196,6 @@ async def download(ctx, *, movie_name: str):
         await ctx.send(f"Download complete for: {movie_name}")
         await ctx.send(f"$refresh")
 
-# Handle qbittorrent login
-try:
-    with open('qb_login.txt', 'r') as f:
-        qb_username = f.readline().strip()
-        qb_password = f.readline().strip()
-except FileNotFoundError:
-    print("WARNING: QB_LOGIN.TXT NOT FOUND. CANNOT CONNECT TO BITTORRENT.")
-    qb_username = ''
-    qb_password = ''
-
 # Variables
 torrents = py1337x(proxy='1337x.to', cache='py1337xCache', cacheTime=0)
 qb = qbittorrentapi.Client(host='http://154.53.44.231:8080', username=qb_username, password=qb_password)
@@ -237,8 +210,4 @@ while not connected:
         print(f"qBittorrent login failed: {e}. Retrying in 10 seconds...")
     sleep(10)  # Wait for 10 seconds before retrying
 
-try:
-    with open('token.txt', 'r') as f:
-        bot.run(f.read().strip())
-except FileNotFoundError:
-    print("WARNING: TOKEN.TXT NOT FOUND. WILL NOT FUNCTION.")
+bot.run(TOKEN)
